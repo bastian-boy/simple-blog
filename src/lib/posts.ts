@@ -1,56 +1,74 @@
+import { Post } from "@/types";
 import fs from "fs";
 import path from "path";
-import matter from "gray-matter";
+import matter from "gray-matter"; // You'll need to install this
 
-const postsDirectory = path.join(process.cwd(), "posts");
+// Helper function to calculate reading time
+function calculateReadingTime(content: string): string {
+  const wordsPerMinute = 200;
+  const words = content.trim().split(/\s+/).length;
+  const minutes = Math.ceil(words / wordsPerMinute);
+  return `${minutes} min read`;
+}
 
-export function getAllPosts() {
+const postsDirectory = path.join(process.cwd(), "_posts");
+
+export function getAllPosts(): Post[] {
   const fileNames = fs.readdirSync(postsDirectory);
-  const allPostsData = fileNames.map((fileName) => {
-    // Remove ".md" from file name to get id
+  return fileNames.map((fileName) => {
     const id = fileName.replace(/\.md$/, "");
-
-    // Read markdown file as string
     const fullPath = path.join(postsDirectory, fileName);
     const fileContents = fs.readFileSync(fullPath, "utf8");
+    const { data, content } = matter(fileContents);
 
-    // Use gray-matter to parse the post metadata section
-    const matterResult = matter(fileContents);
-
-    // Combine the data with the id
     return {
       id,
-      content: matterResult.content,
-      ...(matterResult.data as {
-        title: string;
-        date: string;
-        description: string;
-      }),
+      content,
+      title: data.title,
+      date: data.date,
+      description: data.description,
+      tags: data.tags || [],
+      readingTime: `${Math.ceil(content.split(/\s+/).length / 200)} min read`,
     };
-  });
-
-  // Sort posts by date
-  return allPostsData.sort((a, b) => {
-    if (a.date < b.date) {
-      return 1;
-    } else {
-      return -1;
-    }
   });
 }
 
-export async function getPostById(id: string) {
-  const fullPath = path.join(postsDirectory, `${id}.md`);
-  const fileContents = fs.readFileSync(fullPath, "utf8");
-  const matterResult = matter(fileContents);
+// Get a single post by its ID
+export function getPostById(id: string): Post | undefined {
+  try {
+    const fullPath = path.join(postsDirectory, `${id}.md`);
+    const fileContents = fs.readFileSync(fullPath, "utf8");
+    const { data, content } = matter(fileContents);
 
-  return {
-    id,
-    content: matterResult.content,
-    ...(matterResult.data as {
-      title: string;
-      date: string;
-      description: string;
-    }),
-  };
+    return {
+      id,
+      content,
+      title: data.title,
+      date: data.date,
+      description: data.description,
+      tags: data.tags || [],
+      readingTime: `${Math.ceil(content.split(/\s+/).length / 200)} min read`,
+    };
+  } catch (e) {
+    return undefined;
+  }
+}
+
+// Get all unique tags from posts
+export function getAllTags(): string[] {
+  const posts = getAllPosts();
+  const tags = new Set(posts.flatMap((post) => post.tags));
+  return Array.from(tags);
+}
+
+// Filter posts by tag
+export function getPostsByTag(tag: string): Post[] {
+  return getAllPosts().filter((post) => post.tags.includes(tag));
+}
+
+// Sort posts by date (newest first)
+export function getSortedPosts(): Post[] {
+  return getAllPosts().sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
 }

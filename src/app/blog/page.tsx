@@ -10,7 +10,7 @@ export default function BlogPage() {
         <h1 className="text-4xl font-bold mb-8">Blog Posts</h1>
         <div className="space-y-8">
           {posts.map((post) => (
-            <article key={post.id} className="border-b pb-8">
+            <article key={post.id} className="border-b border-gray-700 pb-8">
               {/* Post metadata */}
               <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
                 <time dateTime={post.date}>{formatDate(post.date)}</time>
@@ -24,14 +24,14 @@ export default function BlogPage() {
                 </h2>
               </Link>
 
-              <p className="text-gray-700 mb-3">{post.description}</p>
+              <p className="text-gray-400 mb-3">{post.description}</p>
 
               {/* Tags */}
               <div className="flex gap-2">
                 {post.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="px-2 py-1 bg-gray-100 text-sm text-gray-700 rounded-full"
+                    className="px-2 py-1 bg-gray-100 text-sm text-gray-700"
                   >
                     {tag}
                   </span>

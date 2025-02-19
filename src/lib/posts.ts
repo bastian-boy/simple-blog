@@ -1,17 +1,10 @@
 import { Post } from "@/types";
 import fs from "fs";
 import path from "path";
-import matter from "gray-matter"; // You'll need to install this
-
-// Helper function to calculate reading time
-function calculateReadingTime(content: string): string {
-  const wordsPerMinute = 200;
-  const words = content.trim().split(/\s+/).length;
-  const minutes = Math.ceil(words / wordsPerMinute);
-  return `${minutes} min read`;
-}
+import matter from "gray-matter";
 
 const postsDirectory = path.join(process.cwd(), "_posts");
+const publicDirectory = path.join(process.cwd(), "public");
 
 export function getAllPosts(): Post[] {
   const fileNames = fs.readdirSync(postsDirectory);
@@ -23,7 +16,7 @@ export function getAllPosts(): Post[] {
 
     return {
       id,
-      content,
+      content: processImagePaths(content),
       title: data.title,
       date: data.date,
       description: data.description,
@@ -33,7 +26,14 @@ export function getAllPosts(): Post[] {
   });
 }
 
-// Get a single post by its ID
+export function processImagePaths(content: string) {
+  return content.replace(/!\[([^\]]*)\]\(([^)]*)\)/g, (match, alt, src) => {
+    if (src.startsWith("http")) return match;
+    const publicPath = `/blog/${src}`;
+    return `![${alt}](${publicPath})`;
+  });
+}
+
 export function getPostById(id: string): Post | undefined {
   try {
     const fullPath = path.join(postsDirectory, `${id}.md`);
@@ -42,7 +42,7 @@ export function getPostById(id: string): Post | undefined {
 
     return {
       id,
-      content,
+      content: processImagePaths(content),
       title: data.title,
       date: data.date,
       description: data.description,
